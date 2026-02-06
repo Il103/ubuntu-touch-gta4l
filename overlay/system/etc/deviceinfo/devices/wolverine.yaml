@@ -1,0 +1,7 @@
+wolverine:
+  Vendor: BlackBerry
+  PrettyName: Passport
+  DeviceType: phone
+  GridUnit: 21
+  SupportedOrientations:
+    - Portrait
