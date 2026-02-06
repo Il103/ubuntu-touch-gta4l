@@ -1,3 +1,4 @@
 build/
+overlay/system/var/lib/lxc/android/android-rootfs.img
 out/
 workdir/
