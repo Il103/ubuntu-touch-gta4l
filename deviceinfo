@@ -7,18 +7,13 @@ deviceinfo_arch="arm64"
 deviceinfo_halium_version="12"
 DEVICE_GENERIC_URL="git://github.com/Halium/generic_device_image_gnulinux.git"
 
-# --- ركز هنا: دي بيانات السورس اللي إنت لسه جايبه ---
 deviceinfo_kernel_source="https://github.com/LineageOS/android_kernel_samsung_sm6115.git"
-deviceinfo_kernel_source_branch="lineage-19.1" 
+deviceinfo_kernel_source_branch="lineage-20"
 deviceinfo_kernel_defconfig="vendor/gta4l_eur_open_defconfig"
-# -----------------------------------------------------
-
-# لو مالقتش فرع 19.1 وخليتها 20، غير الرقم في السطر اللي فوق لـ lineage-20
 
 deviceinfo_kernel_clang_compile="true"
 CROSS_COMPILE="aarch64-linux-android-"
 
-# إعدادات الذاكرة للـ gta4l (من شجرة LineageOS)
 deviceinfo_flash_pagesize="4096"
 deviceinfo_flash_offset_base="0x00000000"
 deviceinfo_flash_offset_kernel="0x00008000"
