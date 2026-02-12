@@ -9,7 +9,7 @@ DEVICE_GENERIC_URL="git://github.com/Halium/generic_device_image_gnulinux.git"
 
 deviceinfo_kernel_source="https://github.com/LineageOS/android_kernel_samsung_sm6115.git"
 deviceinfo_kernel_source_branch="lineage-20"
-deviceinfo_kernel_defconfig="vendor/gta4l_eur_open_defconfig"
+deviceinfo_kernel_defconfig="vendor/gta4l_defconfig"
 
 deviceinfo_kernel_clang_compile="true"
 CROSS_COMPILE="aarch64-linux-android-"
@@ -17,7 +17,7 @@ CROSS_COMPILE="aarch64-linux-android-"
 deviceinfo_flash_pagesize="4096"
 deviceinfo_flash_offset_base="0x00000000"
 deviceinfo_flash_offset_kernel="0x00008000"
-deviceinfo_flash_offset_ramdisk="0x02000000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
 deviceinfo_flash_offset_second="0x00f00000"
 deviceinfo_flash_offset_tags="0x00000100"
 
