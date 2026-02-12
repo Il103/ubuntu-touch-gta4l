@@ -7,11 +7,9 @@ deviceinfo_arch="arm64"
 deviceinfo_halium_version="12"
 DEVICE_GENERIC_URL="git://github.com/Halium/generic_device_image_gnulinux.git"
 
-# السورس اللي اشتغل معاك في الـ Log
 deviceinfo_kernel_source="https://github.com/LineageOS/android_kernel_samsung_sm6115.git"
-deviceinfo_kernel_source_branch="lineage-20"
-# الاسم ده هو اللي موجود فعلاً جوه السورس ده
-deviceinfo_kernel_defconfig="vendor/gta4l_eur_open_defconfig"
+deviceinfo_kernel_source_branch="lineage-21"
+deviceinfo_kernel_defconfig="gta4l_defconfig"
 
 deviceinfo_kernel_clang_compile="true"
 CROSS_COMPILE="aarch64-linux-android-"
@@ -23,9 +21,9 @@ deviceinfo_flash_offset_ramdisk="0x01000000"
 deviceinfo_flash_offset_second="0x00f00000"
 deviceinfo_flash_offset_tags="0x00000100"
 
-deviceinfo_kernel_cmdline="console=null androidboot.hardware=qcom androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x480:24:16:0 msm_rtb.filter=0x237 earlycon=msm_geni_serial,0x4a90000 service_locator.enable=1 androidboot.usbcontroller=4e00000.dwc3 swiotlb=2048 loop.max_part=7"
+deviceinfo_kernel_cmdline="console=null androidboot.hardware=qcom androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x480:24:16:0 msm_rtb.filter=0x237 earlycon=msm_geni_serial,0x4a90000 service_locator.enable=1 androidboot.usbcontroller=4e00000.dwc3 swiotlb=2048 loop.max_part=7 firmware_class.path=/vendor/firmware_mnt/image"
 
 deviceinfo_bootimg_header_version=2
 deviceinfo_bootimg_os_version="12.0.0"
-deviceinfo_bootimg_os_patch_level="$(date +%Y-%m-%d)"
+deviceinfo_bootimg_os_patch_level="2026-02-12"
 deviceinfo_ubuntu_touch_release="20.04"
