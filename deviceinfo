@@ -1,20 +1,24 @@
-deviceinfo_name="Samsung Galaxy Tab A7"
+deviceinfo_format_version="0"
+deviceinfo_name="Samsung Galaxy Tab A7 LTE"
 deviceinfo_manufacturer="Samsung"
 deviceinfo_codename="gta4l"
+deviceinfo_year="2020"
 deviceinfo_arch="arm64"
 deviceinfo_halium_version="12"
 DEVICE_GENERIC_URL="git://github.com/Halium/generic_device_image_gnulinux.git"
 
-# --- الحتة دي لازم تحط فيها لينكاتك إنت ---
-deviceinfo_kernel_source="حط_لينك_الكيرنل_بتاعك_هنا"
-deviceinfo_kernel_source_branch="حط_اسم_البرانش_هنا"
-deviceinfo_kernel_defconfig="gta4l_eur_open_defconfig"
-# ----------------------------------------
+# --- ركز هنا: دي بيانات السورس اللي إنت لسه جايبه ---
+deviceinfo_kernel_source="https://github.com/LineageOS/android_kernel_samsung_sm6115.git"
+deviceinfo_kernel_source_branch="lineage-19.1" 
+deviceinfo_kernel_defconfig="vendor/gta4l_eur_open_defconfig"
+# -----------------------------------------------------
+
+# لو مالقتش فرع 19.1 وخليتها 20، غير الرقم في السطر اللي فوق لـ lineage-20
 
 deviceinfo_kernel_clang_compile="true"
 CROSS_COMPILE="aarch64-linux-android-"
 
-# إعدادات الذاكرة (Memory Layout) الخاصة بسامسونج
+# إعدادات الذاكرة للـ gta4l (من شجرة LineageOS)
 deviceinfo_flash_pagesize="4096"
 deviceinfo_flash_offset_base="0x00000000"
 deviceinfo_flash_offset_kernel="0x00008000"
@@ -22,7 +26,7 @@ deviceinfo_flash_offset_ramdisk="0x02000000"
 deviceinfo_flash_offset_second="0x00f00000"
 deviceinfo_flash_offset_tags="0x00000100"
 
-deviceinfo_kernel_cmdline="console=null androidboot.hardware=qcom androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x480:24:16:0 msm_rtb.filter=0x237 earlycon=msm_geni_serial,0x4a90000"
+deviceinfo_kernel_cmdline="console=null androidboot.hardware=qcom androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x480:24:16:0 msm_rtb.filter=0x237 earlycon=msm_geni_serial,0x4a90000 service_locator.enable=1 androidboot.usbcontroller=4e00000.dwc3 swiotlb=2048 loop.max_part=7"
 
 deviceinfo_bootimg_header_version=2
 deviceinfo_bootimg_os_version="12.0.0"
