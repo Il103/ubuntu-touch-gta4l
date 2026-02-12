@@ -1,24 +1,30 @@
-deviceinfo_name="BlackBerry Passport"
-deviceinfo_manufacturer="BlackBerry"
-deviceinfo_codename="wseries"
-deviceinfo_arch="arm"
-deviceinfo_halium_version="11"
-DEVICE_GENERIC_URL="none"
-deviceinfo_kernel_source="https://github.com/NotKit/android_kernel_blackberry_msm8974.git"
-deviceinfo_kernel_source_branch="halium-11.0"
-deviceinfo_kernel_clang_compile="false"
-CROSS_COMPILE="arm-linux-androideabi-"
-deviceinfo_kernel_defconfig="lineageos_wseries_defconfig"
-deviceinfo_flash_pagesize="2048"
+deviceinfo_name="Samsung Galaxy Tab A7"
+deviceinfo_manufacturer="Samsung"
+deviceinfo_codename="gta4l"
+deviceinfo_arch="arm64"
+deviceinfo_halium_version="12"
+DEVICE_GENERIC_URL="git://github.com/Halium/generic_device_image_gnulinux.git"
+
+# --- الحتة دي لازم تحط فيها لينكاتك إنت ---
+deviceinfo_kernel_source="حط_لينك_الكيرنل_بتاعك_هنا"
+deviceinfo_kernel_source_branch="حط_اسم_البرانش_هنا"
+deviceinfo_kernel_defconfig="gta4l_eur_open_defconfig"
+# ----------------------------------------
+
+deviceinfo_kernel_clang_compile="true"
+CROSS_COMPILE="aarch64-linux-android-"
+
+# إعدادات الذاكرة (Memory Layout) الخاصة بسامسونج
+deviceinfo_flash_pagesize="4096"
 deviceinfo_flash_offset_base="0x00000000"
 deviceinfo_flash_offset_kernel="0x00008000"
-deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_ramdisk="0x02000000"
 deviceinfo_flash_offset_second="0x00f00000"
 deviceinfo_flash_offset_tags="0x00000100"
-deviceinfo_kernel_cmdline="androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x3b7 ehci-hcd.park=3 androidboot.bootdevice=msm_sdcc.1"
-deviceinfo_bootimg_qcdt="true"
-deviceinfo_bootimg_qcdt_type="qcom"
-deviceinfo_bootimg_header_version=0
-deviceinfo_bootimg_os_version="11.0.0"
+
+deviceinfo_kernel_cmdline="console=null androidboot.hardware=qcom androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x480:24:16:0 msm_rtb.filter=0x237 earlycon=msm_geni_serial,0x4a90000"
+
+deviceinfo_bootimg_header_version=2
+deviceinfo_bootimg_os_version="12.0.0"
 deviceinfo_bootimg_os_patch_level="$(date +%Y-%m-%d)"
-deviceinfo_ubuntu_touch_release="24.04-1.x"
+deviceinfo_ubuntu_touch_release="20.04"
