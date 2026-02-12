@@ -9,7 +9,7 @@ DEVICE_GENERIC_URL="git://github.com/Halium/generic_device_image_gnulinux.git"
 
 deviceinfo_kernel_source="https://github.com/LineageOS/android_kernel_samsung_sm6115.git"
 deviceinfo_kernel_source_branch="lineage-20"
-deviceinfo_kernel_defconfig="vendor/gta4l_eur_open_defconfig"
+deviceinfo_kernel_defconfig="vendor/bengal_defconfig"
 
 deviceinfo_kernel_clang_compile="true"
 CROSS_COMPILE="aarch64-linux-android-"
