@@ -11,13 +11,9 @@ deviceinfo_kernel_source="https://github.com/LineageOS/android_kernel_samsung_sm
 deviceinfo_kernel_source_branch="lineage-20"
 deviceinfo_kernel_defconfig="vendor/bengal_defconfig"
 
-# --- ترسانة القوة القصوى لضمان البناء ---
-deviceinfo_kernel_clang_compile="true"
-deviceinfo_kernel_use_lld="true"
-deviceinfo_kernel_llvm_binutils="true"
+# إيقاف Clang واستخدام GCC عشان نتخطى إيرور الربط (Linking)
+deviceinfo_kernel_clang_compile="false"
 CROSS_COMPILE="aarch64-linux-android-"
-# تجاهل أي تحذيرات بتوقف البناء عشان مفيش حاجة تعطلنا
-deviceinfo_kernel_extra_make_args="KCFLAGS=-w KCPPFLAGS=-w"
 
 deviceinfo_flash_pagesize="4096"
 deviceinfo_flash_offset_base="0x00000000"
@@ -26,8 +22,7 @@ deviceinfo_flash_offset_ramdisk="0x01000000"
 deviceinfo_flash_offset_second="0x00f00000"
 deviceinfo_flash_offset_tags="0x00000100"
 
-# Cmdline جبار لتجنب الانهيارات وضمان سرعة النظام
-deviceinfo_kernel_cmdline="console=null androidboot.hardware=qcom androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x480:24:16:0 msm_rtb.filter=0x237 earlycon=msm_geni_serial,0x4a90000 service_locator.enable=1 androidboot.usbcontroller=4e00000.dwc3 swiotlb=2048 loop.max_part=7 firmware_class.path=/vendor/firmware_mnt/image cgroup_disable=memory panic=0 zswap.enabled=1 zswap.compressor=lz4"
+deviceinfo_kernel_cmdline="console=null androidboot.hardware=qcom androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x480:24:16:0 msm_rtb.filter=0x237 earlycon=msm_geni_serial,0x4a90000 service_locator.enable=1 androidboot.usbcontroller=4e00000.dwc3 swiotlb=2048 loop.max_part=7 firmware_class.path=/vendor/firmware_mnt/image cgroup_disable=memory panic=0"
 
 deviceinfo_bootimg_header_version=2
 deviceinfo_bootimg_os_version="12.0.0"
