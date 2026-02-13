@@ -12,15 +12,13 @@ deviceinfo_kernel_source_branch="lineage-20"
 deviceinfo_kernel_defconfig="vendor/bengal_defconfig"
 
 # ---------------------------------------------------------
-# 💉 منطقة الحقن المباشر (Direct Environment Injection) 💉
+# 🛡️ منطقة الأمان القصوى (Maximum Safety Zone) 🛡️
 # ---------------------------------------------------------
-# بنشغل الـ Clang عشان المسارات تتظبط
 deviceinfo_kernel_clang_compile="true"
 deviceinfo_kernel_use_lld="true"
 deviceinfo_kernel_llvm_binutils="true"
 
-# هنا "الزتونة": كلمة export بتجبر الـ Make يشوف المتغيرات دي
-# غصب عن السكريبت الغبي
+# 1. إجبار الأدوات (عشان نتفادى مشاكل الـ AR القديمة)
 export LLVM=1
 export LLVM_IAS=1
 export AR=llvm-ar
@@ -30,13 +28,19 @@ export OBJDUMP=llvm-objdump
 export STRIP=llvm-strip
 export READELF=llvm-readelf
 
-# كتم التحذيرات عشان ميزهقناش
-export KCFLAGS=-w
-export KCPPFLAGS=-w
+# 2. أمان الرامات (RAM Safety) - ده اللي هيعديك من سطر 4422
+# -g0: بيشيل الزيادات عشان الرامات متفرقعش
+# -w: بيكتم التحذيرات
+export KCFLAGS="-w -g0"
+export KCPPFLAGS="-w -g0"
 
-CROSS_COMPILE="aarch64-linux-android-"
+# 3. تنظيف الرامات أثناء الربط (Linker Optimization)
+# --gc-sections: بيحذف الكود غير المستخدم عشان الملف يخف
+export KBUILD_LDFLAGS="--gc-sections"
 
 # ---------------------------------------------------------
+
+CROSS_COMPILE="aarch64-linux-android-"
 
 deviceinfo_flash_pagesize="4096"
 deviceinfo_flash_offset_base="0x00000000"
@@ -45,7 +49,7 @@ deviceinfo_flash_offset_ramdisk="0x01000000"
 deviceinfo_flash_offset_second="0x00f00000"
 deviceinfo_flash_offset_tags="0x00000100"
 
-# Cmdline "الجوكر"
+# Cmdline "الجوكر" المضمون
 deviceinfo_kernel_cmdline="console=ttyMSM0,115200n8 androidboot.console=ttyMSM0 androidboot.hardware=qcom androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x480:24:16:0 msm_rtb.filter=0x237 earlycon=msm_geni_serial,0x4a90000 service_locator.enable=1 androidboot.usbcontroller=4e00000.dwc3 swiotlb=2048 loop.max_part=7 firmware_class.path=/vendor/firmware_mnt/image cgroup_disable=memory panic=0 zswap.enabled=1 zswap.compressor=lz4 androidboot.selinux=permissive"
 
 deviceinfo_bootimg_header_version=2
