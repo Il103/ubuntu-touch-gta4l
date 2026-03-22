@@ -1,42 +1,35 @@
-# ---------------------------------------------------------
-# Device Info - Samsung Tab A7 (gta4l)
-# ---------------------------------------------------------
-deviceinfo_format_version="0"
-deviceinfo_name="Samsung Galaxy Tab A7 LTE"
+# Device info for Samsung Galaxy Tab A7 10.4 (2020) - LTE Edition
+# Model: SM-T505N | Codename: gta4l
+
+deviceinfo_format_version="1"
+deviceinfo_name="Samsung Galaxy Tab A7 (LTE)"
 deviceinfo_manufacturer="Samsung"
 deviceinfo_codename="gta4l"
-deviceinfo_arch="arm64"
-deviceinfo_halium_version="12"
-deviceinfo_ubuntu_touch_release="20.04"
+deviceinfo_year="2020"
+deviceinfo_arch="aarch64"
 
-# Kernel Source (LineageOS 20)
-deviceinfo_kernel_source="https://github.com/LineageOS/android_kernel_samsung_sm6115.git"
-deviceinfo_kernel_source_branch="lineage-20"
-deviceinfo_kernel_defconfig="vendor/bengal_defconfig"
+# Bootloader & Kernel (Tweak for SM-T505N Modem)
+# ضفت لك androidboot.selinux=permissive عشان الأوبونتو ميتحبسش في الأول
+deviceinfo_kernel_cmdline="console=ttyMSM0,115200n8 earlycon=msm_geni_serial,0x4a90000 androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.memcg=1 loop.max_part=7 androidboot.selinux=permissive"
+deviceinfo_generate_bootimg="true"
+deviceinfo_bootimg_qcdt="false"
+deviceinfo_bootimg_pagesize="4096"
 
-# Compiler & RAM Optimization (The Fix for Error 2)
-deviceinfo_kernel_clang_compile="true"
-deviceinfo_kernel_use_lld="true"
-deviceinfo_kernel_llvm_binutils="true"
-export LLVM=1
-export LLVM_IAS=1
-export KCFLAGS="-w -g0 -O2"
-export KCPPFLAGS="-w -g0 -O2"
-export KBUILD_LDFLAGS="--gc-sections --strip-all"
+# الأوفستس دي "مقدسة" لسلسلة الـ T50x عشان الـ Odin والـ Fastboot يقبلوها
+deviceinfo_bootimg_base="0x00000000"
+deviceinfo_bootimg_kernel_offset="0x00008000"
+deviceinfo_bootimg_ramdisk_offset="0x01000000"
+deviceinfo_bootimg_tags_offset="0x00000100"
 
-# Flash Offsets & Partition
+# Display (الـ Resolution الصح للـ T505N)
+deviceinfo_screen_width="1200"
+deviceinfo_screen_height="2000"
+deviceinfo_screen_ppi="224"
+
+# Flash methods
+deviceinfo_flash_method="fastboot"
 deviceinfo_flash_pagesize="4096"
-deviceinfo_flash_offset_base="0x00000000"
-deviceinfo_flash_offset_kernel="0x00008000"
-deviceinfo_flash_offset_ramdisk="0x01000000"
-deviceinfo_flash_offset_second="0x00f00000"
-deviceinfo_flash_offset_tags="0x00000100"
-deviceinfo_bootimg_header_version="2"
-deviceinfo_bootimg_partition_size="67108864"
 
-# Display & UI Scaling
-deviceinfo_display_density="240"
-deviceinfo_gpu_arch="adreno"
-
-# Cmdline (Swap + Drivers Support)
-deviceinfo_kernel_cmdline="console=ttyMSM0,115200n8 androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.memcg=1 lpm_levels.sleep_disabled=1 msm_rtb.filter=0x237 service_locator.enable=1 androidboot.usbcontroller=4e00000.dwc3 swiotlb=2048 loop.max_part=16 cgroup_disable=memory panic=0 androidboot.selinux=permissive zswap.enabled=1 zswap.compressor=lz4 zswap.max_pool_percent=50 zram.num_devices=1 firmware_class.path=/vendor/firmware_mnt/image,/vendor/firmware"
+# Halium specs
+deviceinfo_halium_version="11" # جرب 11 لو 12 عملت Error 2
+deviceinfo_halium_build_syspart="true"
