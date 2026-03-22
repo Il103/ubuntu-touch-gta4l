@@ -1,4 +1,4 @@
-name: Build Ubuntu Touch (T505N Ultimate Edition)
+name: Build Ubuntu Touch (T505N Final Alpha)
 
 on:
   push:
@@ -9,33 +9,32 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      # 1. المرحلة الإعجازية: 128 جيجا سواب (إجمالي رامات السيرفر هتبقى 135 جيجا!)
-      - name: Maximize Build Space (The Absolute Beast)
+      # 1. المرحلة القصوى: 60 جيجا سواب (أعلى رقم آمن للسيرفر)
+      - name: Maximize Build Space (The Beast Mode)
         uses: easimon/maximize-build-space@master
         with:
-          root-reserve-mb: 15360   # سبنا 15 جيجا بس للسيستم والباقي كلو للبناء
-          swap-size-mb: 131072     # 128 جيجا سواب (مستحيل الـ RAM تخلص مهما حصل)
+          root-reserve-mb: 15360   # سبنا 15 جيجا للنظام
+          swap-size-mb: 61440      # 60 جيجا سواب (إجمالي رامات 75 جيجا!)
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
 
-      # 2. فك قيود السيستم القصوى (توليع النار في المعالج)
-      - name: Turbo-Charge OS & CPU
+      # 2. حقنة سرعة للمعالج والذاكرة
+      - name: Turbo-Charge OS
         run: |
           sudo sysctl -w vm.swappiness=100
-          sudo sysctl -w fs.file-max=100000000
+          sudo sysctl -w fs.file-max=10000000
           sudo sysctl -w fs.pipe-max-size=1048576
           ulimit -n 1048576
-          echo "RAM Status:"
           free -h
 
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 3. ترسانة الـ 2000 مكتبة (كل ما يحتاجه البشر والجن لبناء كيرنل سامسونج)
-      - name: Install All-In-One God-Mode Dependencies
+      # 3. ترسانة الـ 2000 مكتبة (كل ما يحتاجه تابلت سامسونج)
+      - name: Install All-In-One Dependencies
         run: |
           sudo apt update
           sudo apt install -y \
@@ -49,46 +48,35 @@ jobs:
           lib32readline-dev lib32z1-dev libgl1-mesa-dev libxml2-utils \
           xsltproc unzip fontconfig maven schedtool libssl-dev \
           lib32ncurses-dev libncurses5 pkg-config libarchive-tools \
-          rsync adb fastboot python3-pip zip unzip \
-          llvm clang lld ninja-build rename libcap-dev libfdt-dev \
-          ccache doxygen graphviz pigz p7zip-full --no-install-recommends
+          rsync adb fastboot python3-pip zip unzip --no-install-recommends
           sudo apt clean
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
-      # 4. تريكة الـ Auto-Patching عشان الـ Boot يشتغل لـ T505N
-      - name: Fix Configs & Scripts
+      # 4. تريكة الـ T505N لضمان الـ Boot
+      - name: Patch Kernel Configs
         run: |
-          echo "Injecting mandatory configs for Ubuntu Touch Boot..."
-          # تفعيل الـ DEVTMPFS عشان السيستم يقدر يفتح ملفات الجهاز
+          echo "Injecting DEVTMPFS for T505N..."
           find . -name "*defconfig*" -exec sh -c 'echo "CONFIG_DEVTMPFS=y" >> {}' \;
           find . -name "*defconfig*" -exec sh -c 'echo "CONFIG_DEVTMPFS_MOUNT=y" >> {}' \;
-          # تصحيح الـ build.sh عشان يستخدم كل الأنوية
+          # تسريع الماك لـ جوبز متوازية
           sed -i 's/make/make -j$(nproc)/g' build.sh || true
           chmod +x build.sh
 
-      # 5. البناء النووي (Hyper-Speed Build)
+      # 5. البناء (السرعة "فشيخة" بـ Parallel Jobs)
       - name: Build device tarball
         run: |
           ./build.sh -b workdir 2>&1 | tee build.log
         continue-on-error: false
 
-      # 6. نظام صيد الأخطاء (لو حصلت كارثة)
-      - name: Advanced Error Hunting
+      # 6. صيد الإيرور (لو حصلت أي حركة غدر)
+      - name: Ultimate Error Diagnosis
         if: failure()
         run: |
-          echo "🔎 Analyzing logs for Error 2..."
-          grep -i -B 100 -A 50 "error" build.log || tail -n 2000 build.log
-          find workdir/downloads/KERNEL_OBJ -name "*.log" -exec tail -n 50 {} + || true
-
-      - name: Upload Critical Logs
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: monster-debug-logs
-          path: build.log
+          echo "🔎 Searching for the killer in logs..."
+          grep -i -B 50 -A 20 "error" build.log || tail -n 500 build.log
 
       # 7. تحويل الـ Tarball لصور قابلة للتفليش (Flashable)
-      - name: Create Flashable Images (T505N Optimized)
+      - name: Create Final Flashable Images
         if: success()
         run: |
           sudo apt update && sudo apt install -y fakeroot git img2simg jq sudo wget xz-utils zstd
@@ -100,8 +88,8 @@ jobs:
           zstd -15 -T0 out_final/ubuntu.img -o out_final/ubuntu.img.zst
           mv out_final/boot.img out_final/boot-T505N.img
 
-      # 8. الرفع النهائي (Release & Artifacts)
-      - name: Upload Final Artifacts
+      # 8. الرفع النهائي (Artifacts & Release)
+      - name: Upload Final Images
         if: success()
         uses: actions/upload-artifact@v4
         with:
@@ -116,8 +104,8 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             out_final/boot-T505N.img \
             out_final/ubuntu.img.zst \
-            --title "Ubuntu Touch Stable for Tab A7 (T505N)" \
-            --notes "Nuclear Build - 128GB Swap - T505N Optimized" \
+            --title "Ubuntu Touch Stable for T505N" \
+            --notes "Stable Build - 60GB Swap - T505N Specific Fixes" \
             --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
