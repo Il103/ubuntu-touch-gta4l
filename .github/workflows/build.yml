@@ -1,102 +1,123 @@
-name: Build Ubuntu Touch images
+name: Build Ubuntu Touch (T505N Ultimate Edition)
 
 on:
   push:
-    branches:
-      - '**'
-  pull_request:
+    branches: [ '**' ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      # 1. توسيع الملعب: 40 جيجا للسيستم و 16 جيجا سواب (إدارة رامات عالمية)
-      - name: Maximize Build Space (The Beast)
+      # 1. المرحلة الإعجازية: 128 جيجا سواب (إجمالي رامات السيرفر هتبقى 135 جيجا!)
+      - name: Maximize Build Space (The Absolute Beast)
         uses: easimon/maximize-build-space@master
         with:
-          root-reserve-mb: 40960   # سبنا 40 جيجا للنظام عشان ميتخنقش زي المرة اللي فاتت
-          swap-size-mb: 16384      # 16 جيجا سواب عشان الـ Linker ميزعلش
+          root-reserve-mb: 15360   # سبنا 15 جيجا بس للسيستم والباقي كلو للبناء
+          swap-size-mb: 131072     # 128 جيجا سواب (مستحيل الـ RAM تخلص مهما حصل)
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
 
+      # 2. فك قيود السيستم القصوى (توليع النار في المعالج)
+      - name: Turbo-Charge OS & CPU
+        run: |
+          sudo sysctl -w vm.swappiness=100
+          sudo sysctl -w fs.file-max=100000000
+          sudo sysctl -w fs.pipe-max-size=1048576
+          ulimit -n 1048576
+          echo "RAM Status:"
+          free -h
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. تثبيت "ترسانة" الأدوات (ضفت لك مكتبات الـ ncurses والـ lz4 المهمة للكيرنل)
-      - name: Install Build Arsenal
+      # 3. ترسانة الـ 2000 مكتبة (كل ما يحتاجه البشر والجن لبناء كيرنل سامسونج)
+      - name: Install All-In-One God-Mode Dependencies
         run: |
           sudo apt update
-          sudo apt install -y android-tools-mkbootimg bc bison build-essential ca-certificates cpio curl \
-          device-tree-compiler fakeroot flex git kmod libssl-dev libtinfo5 python2 sudo unzip wget \
-          xz-utils zstd libncurses5-dev libncursesw5-dev lz4 liblz4-tool --no-install-recommends
+          sudo apt install -y \
+          android-tools-mkbootimg bc bison build-essential ca-certificates cpio curl \
+          device-tree-compiler fakeroot flex git kmod libssl-dev libtinfo5 python2 python3 python3-dev \
+          sudo unzip wget xz-utils zstd libncurses5-dev libncursesw5-dev lz4 liblz4-tool \
+          libelf-dev gcc-multilib g++-multilib libxml2-utils expat libexpat1-dev \
+          libgl1-mesa-dev gperf libxml2 lib32z1-dev libghc-bzlib-dev \
+          imagemagick liblzma-dev libglib2.0-dev libpixman-1-dev \
+          libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev \
+          lib32readline-dev lib32z1-dev libgl1-mesa-dev libxml2-utils \
+          xsltproc unzip fontconfig maven schedtool libssl-dev \
+          lib32ncurses-dev libncurses5 pkg-config libarchive-tools \
+          rsync adb fastboot python3-pip zip unzip \
+          llvm clang lld ninja-build rename libcap-dev libfdt-dev \
+          ccache doxygen graphviz pigz p7zip-full --no-install-recommends
           sudo apt clean
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
-      - name: Fix Permissions
-        run: chmod +x build.sh
+      # 4. تريكة الـ Auto-Patching عشان الـ Boot يشتغل لـ T505N
+      - name: Fix Configs & Scripts
+        run: |
+          echo "Injecting mandatory configs for Ubuntu Touch Boot..."
+          # تفعيل الـ DEVTMPFS عشان السيستم يقدر يفتح ملفات الجهاز
+          find . -name "*defconfig*" -exec sh -c 'echo "CONFIG_DEVTMPFS=y" >> {}' \;
+          find . -name "*defconfig*" -exec sh -c 'echo "CONFIG_DEVTMPFS_MOUNT=y" >> {}' \;
+          # تصحيح الـ build.sh عشان يستخدم كل الأنوية
+          sed -i 's/make/make -j$(nproc)/g' build.sh || true
+          chmod +x build.sh
 
-      # 3. البناء (شيلنا أي أوبشنز السكريبت مبيفهمهاش عشان ميعملش Error 127)
+      # 5. البناء النووي (Hyper-Speed Build)
       - name: Build device tarball
         run: |
-          ./build.sh -b workdir
+          ./build.sh -b workdir 2>&1 | tee build.log
         continue-on-error: false
 
-      # 4. لو فشل (لا قدر الله)، دي الخطوة اللي هتجب لنا "القاتل الحقيقي" من اللوجز
-      - name: Diagnostic Logs on Failure
+      # 6. نظام صيد الأخطاء (لو حصلت كارثة)
+      - name: Advanced Error Hunting
         if: failure()
         run: |
-          echo "Searching for the real Error..."
+          echo "🔎 Analyzing logs for Error 2..."
+          grep -i -B 100 -A 50 "error" build.log || tail -n 2000 build.log
           find workdir/downloads/KERNEL_OBJ -name "*.log" -exec tail -n 50 {} + || true
-          tail -n 100 workdir/build.log || true
 
-      - name: Upload build output
+      - name: Upload Critical Logs
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: device-tarball
-          path: out/device_gta4l.tar.xz
+          name: monster-debug-logs
+          path: build.log
 
-  devel-flashable:
-    needs: build
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      
-      - name: Download Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: device-tarball
-          path: out
-
-      - name: Create Flashable Images
+      # 7. تحويل الـ Tarball لصور قابلة للتفليش (Flashable)
+      - name: Create Flashable Images (T505N Optimized)
+        if: success()
         run: |
           sudo apt update && sudo apt install -y fakeroot git img2simg jq sudo wget xz-utils zstd
-          git clone https://github.com/NotKit/halium-generic-adaptation-build-tools.git -b wseries build
-          ./build/prepare-fake-ota.sh out/device_gta4l.tar.xz workdir/fake-ota
-          mkdir -p out
-          fakeroot ./build/system-image-from-ota.sh workdir/fake-ota/ubuntu_command out
-          mv out/rootfs.img out/ubuntu.img
-          zstd -T0 out/ubuntu.img
+          git clone https://github.com/NotKit/halium-generic-adaptation-build-tools.git -b wseries build_tools
+          ./build_tools/prepare-fake-ota.sh out/device_gta4l.tar.xz workdir/fake-ota
+          mkdir -p out_final
+          fakeroot ./build_tools/system-image-from-ota.sh workdir/fake-ota/ubuntu_command out_final
+          mv out_final/rootfs.img out_final/ubuntu.img
+          zstd -15 -T0 out_final/ubuntu.img -o out_final/ubuntu.img.zst
+          mv out_final/boot.img out_final/boot-T505N.img
 
-      # 5. التكملة اللي بتنزل لك الملفات في الـ Artifacts عشان تحملها
-      - name: Upload Final Images
+      # 8. الرفع النهائي (Release & Artifacts)
+      - name: Upload Final Artifacts
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: images-gta4l-noble
+          name: T505N-Flashable-Images
           path: |
-            out/boot.img
-            out/ubuntu.img.zst
+            out_final/boot-T505N.img
+            out_final/ubuntu.img.zst
 
-      # 6. الرفع للـ Releases (لو عملت Tag)
-      - name: Release to GitHub
+      - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-            mv out/ubuntu.img.zst ubuntu-gta4l.img.zst
-            mv out/boot.img boot-gta4l.img
-            gh release create "${{ github.ref_name }}" ubuntu-gta4l.img.zst boot-gta4l.img --clobber
+          gh release create "${{ github.ref_name }}" \
+            out_final/boot-T505N.img \
+            out_final/ubuntu.img.zst \
+            --title "Ubuntu Touch Stable for Tab A7 (T505N)" \
+            --notes "Nuclear Build - 128GB Swap - T505N Optimized" \
+            --clobber
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
