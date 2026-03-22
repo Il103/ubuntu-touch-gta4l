@@ -9,56 +9,47 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      # 1. المرحلة القصوى: 60 جيجا سواب (أعلى رقم آمن للسيرفر)
-      - name: Maximize Build Space (The Beast Mode)
+      # 1. المرحلة القصوى: 60 جيجا سواب (الرقم السحري للسيرفر)
+      - name: Maximize Build Space
         uses: easimon/maximize-build-space@master
         with:
-          root-reserve-mb: 15360   # سبنا 15 جيجا للنظام
-          swap-size-mb: 61440      # 60 جيجا سواب (إجمالي رامات 75 جيجا!)
+          root-reserve-mb: 15360
+          swap-size-mb: 61440
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
 
-      # 2. حقنة سرعة للمعالج والذاكرة
+      # 2. حقنة سرعة للمعالج (النسخة المستقرة بدون ulimit)
       - name: Turbo-Charge OS
         run: |
           sudo sysctl -w vm.swappiness=100
-          sudo sysctl -w fs.file-max=10000000
+          sudo sysctl -w fs.file-max=2097152
           sudo sysctl -w fs.pipe-max-size=1048576
-          ulimit -n 1048576
           free -h
 
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 3. ترسانة الـ 2000 مكتبة (كل ما يحتاجه تابلت سامسونج)
+      # 3. ترسانة المكتبات الكاملة (كل ما يخص سامسونج والـ Toolchain)
       - name: Install All-In-One Dependencies
         run: |
           sudo apt update
-          sudo apt install -y \
-          android-tools-mkbootimg bc bison build-essential ca-certificates cpio curl \
+          sudo apt install -y android-tools-mkbootimg bc bison build-essential ca-certificates cpio curl \
           device-tree-compiler fakeroot flex git kmod libssl-dev libtinfo5 python2 python3 python3-dev \
           sudo unzip wget xz-utils zstd libncurses5-dev libncursesw5-dev lz4 liblz4-tool \
           libelf-dev gcc-multilib g++-multilib libxml2-utils expat libexpat1-dev \
-          libgl1-mesa-dev gperf libxml2 lib32z1-dev libghc-bzlib-dev \
-          imagemagick liblzma-dev libglib2.0-dev libpixman-1-dev \
-          libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev \
-          lib32readline-dev lib32z1-dev libgl1-mesa-dev libxml2-utils \
-          xsltproc unzip fontconfig maven schedtool libssl-dev \
-          lib32ncurses-dev libncurses5 pkg-config libarchive-tools \
-          rsync adb fastboot python3-pip zip unzip --no-install-recommends
+          pkg-config libarchive-tools rsync --no-install-recommends
           sudo apt clean
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
-      # 4. تريكة الـ T505N لضمان الـ Boot
+      # 4. تريكة الـ T505N لضمان الـ Boot (حقن الـ DEVTMPFS)
       - name: Patch Kernel Configs
         run: |
-          echo "Injecting DEVTMPFS for T505N..."
+          echo "Injecting DEVTMPFS for Galaxy Tab A7 (T505N)..."
           find . -name "*defconfig*" -exec sh -c 'echo "CONFIG_DEVTMPFS=y" >> {}' \;
           find . -name "*defconfig*" -exec sh -c 'echo "CONFIG_DEVTMPFS_MOUNT=y" >> {}' \;
-          # تسريع الماك لـ جوبز متوازية
           sed -i 's/make/make -j$(nproc)/g' build.sh || true
           chmod +x build.sh
 
@@ -68,14 +59,15 @@ jobs:
           ./build.sh -b workdir 2>&1 | tee build.log
         continue-on-error: false
 
-      # 6. صيد الإيرور (لو حصلت أي حركة غدر)
+      # 6. صيد الإيرور (لو حصلت غدر)
       - name: Ultimate Error Diagnosis
         if: failure()
         run: |
-          echo "🔎 Searching for the killer in logs..."
-          grep -i -B 50 -A 20 "error" build.log || tail -n 500 build.log
+          if [ -f build.log ]; then
+            grep -i -B 50 -A 20 "error" build.log || tail -n 500 build.log
+          fi
 
-      # 7. تحويل الـ Tarball لصور قابلة للتفليش (Flashable)
+      # 7. التكملة اللي كنت مستنيها: تحويل الـ Tarball لصور (Flashable)
       - name: Create Final Flashable Images
         if: success()
         run: |
@@ -88,7 +80,7 @@ jobs:
           zstd -15 -T0 out_final/ubuntu.img -o out_final/ubuntu.img.zst
           mv out_final/boot.img out_final/boot-T505N.img
 
-      # 8. الرفع النهائي (Artifacts & Release)
+      # 8. الرفع النهائي للـ Artifacts
       - name: Upload Final Images
         if: success()
         uses: actions/upload-artifact@v4
@@ -98,6 +90,7 @@ jobs:
             out_final/boot-T505N.img
             out_final/ubuntu.img.zst
 
+      # 9. الحركة الصايعة: عمل GitHub Release أوتوماتيك (لما ترفع Tag)
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -105,7 +98,15 @@ jobs:
             out_final/boot-T505N.img \
             out_final/ubuntu.img.zst \
             --title "Ubuntu Touch Stable for T505N" \
-            --notes "Stable Build - 60GB Swap - T505N Specific Fixes" \
+            --notes "Nuclear Build - 60GB Swap - T505N Optimized" \
             --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 10. رفع اللوج في حالة الفشل
+      - name: Upload Build Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-logs
+          path: build.log
