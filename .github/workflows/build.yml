@@ -14,12 +14,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # --- 🚀 تعديل المساحة: سبنا 4 جيجا للنظام وعملنا 12 جيجا سواب ---
-      - name: Maximize Build Space (Fixed Storage Error)
+      # --- 🚀 النسخة الجاحدة لتوفير المساحة والسواب ---
+      - name: Maximize Build Space (Ultimate Edition)
         uses: easimon/maximize-build-space@master
         with:
-          root-reserve-mb: 4096
-          swap-size-mb: 12288
+          root-reserve-mb: 15360
+          swap-size-mb: 10240
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
@@ -30,11 +30,11 @@ jobs:
         run: |
           sudo apt update
           sudo apt install android-tools-mkbootimg bc bison build-essential ca-certificates cpio curl device-tree-compiler fakeroot flex git kmod libssl-dev libtinfo5 python2 sudo unzip wget xz-utils zstd -y --no-install-recommends
+          sudo apt clean
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
       - name: Build device tarball
         run: |
-          # محاولة البناء بكل القوة، ولو فشل يكمل بنواة واحدة (Single Core) أضمن
           ./build.sh -b workdir || ./build.sh -b workdir -j1
 
       - name: Upload build output
@@ -52,10 +52,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      # سواب للمرحلة التانية عشان تجميع الصور
-      - name: Create 12GB Swap
+      - name: Create 10GB Swap
         run: |
-          sudo fallocate -l 12G /swapfile
+          sudo fallocate -l 10G /swapfile
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
@@ -71,6 +70,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y fakeroot git img2simg jq sudo wget xz-utils
+          sudo apt clean
 
       - name: Clone halium-generic-adaptation-build-tools
         run: git clone https://github.com/NotKit/halium-generic-adaptation-build-tools.git -b wseries build
@@ -97,6 +97,7 @@ jobs:
             out/ubuntu.img.zst
             out/device_gta4l.tar.xz
 
+      # --- ✅ التكملة اللي كانت ناقصة (الرفع للـ Releases) ---
       - name: Release flashable images
         if: github.event_name == 'push'
         run: |
@@ -109,7 +110,7 @@ jobs:
             echo "Found tag: $TAG_NAME"
             mv out/ubuntu.img.zst ubuntu-gta4l.img.zst
             mv out/boot.img boot-gta4l.img
-            gh release create "$TAG_NAME" ubuntu-gta4l.img.zst boot-gta4l.img || \
+            gh release create "$TAG_NAME" ubuntu-gta4l.img.zst boot-gta4l.img --clobber || \
                 gh release upload "$TAG_NAME" ubuntu-gta4l.img.zst boot-gta4l.img --clobber
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
