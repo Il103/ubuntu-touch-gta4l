@@ -7,7 +7,7 @@ deviceinfo_arch="aarch64"
 
 # ⚠️ إعدادات الكيرنل (دي اللي كانت ناقصة ووقفت البناء) ⚠️
 deviceinfo_kernel_source="https://github.com/Matrixx-Devices/android_kernel_samsung_gta4l"
-deviceinfo_kernel_source_branch="13.0"
+deviceinfo_kernel_source_branch="12.0"
 deviceinfo_kernel_defconfig="vendor/gta4l-perf_defconfig"
 
 # إعدادات البوت والـ Command Line الخاصة بـ T505N
