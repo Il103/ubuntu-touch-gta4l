@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      # 1. المرحلة القصوى: 60 جيجا سواب (الرقم السحري للسيرفر)
+      # 1. تفضية مساحة السيرفر لـ 60 جيجا سواب
       - name: Maximize Build Space
         uses: easimon/maximize-build-space@master
         with:
@@ -21,7 +21,7 @@ jobs:
           remove-codeql: 'true'
           remove-docker-images: 'true'
 
-      # 2. حقنة سرعة للمعالج (النسخة المستقرة بدون ulimit)
+      # 2. تسريع النظام
       - name: Turbo-Charge OS
         run: |
           sudo sysctl -w vm.swappiness=100
@@ -32,7 +32,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 3. ترسانة المكتبات الكاملة (كل ما يخص سامسونج والـ Toolchain)
+      # 3. تثبيت كل المكتبات الناقصة
       - name: Install All-In-One Dependencies
         run: |
           sudo apt update
@@ -44,7 +44,7 @@ jobs:
           sudo apt clean
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
-      # 4. تريكة الـ T505N لضمان الـ Boot (حقن الـ DEVTMPFS)
+      # 4. حقن إعدادات الكيرنل لضمان الـ Boot في سامسونج
       - name: Patch Kernel Configs
         run: |
           echo "Injecting DEVTMPFS for Galaxy Tab A7 (T505N)..."
@@ -53,34 +53,33 @@ jobs:
           sed -i 's/make/make -j$(nproc)/g' build.sh || true
           chmod +x build.sh
 
-      # 5. البناء (السرعة "فشيخة" بـ Parallel Jobs)
+      # 5. عملية البناء الأساسية
       - name: Build device tarball
         run: |
+          if ! grep -q "deviceinfo_kernel_source" deviceinfo; then
+            echo "❌ Error: Kernel source URL is missing in deviceinfo file!"
+            exit 1
+          fi
           ./build.sh -b workdir 2>&1 | tee build.log
         continue-on-error: false
 
-      # 6. صيد الإيرور (لو حصلت غدر)
-      - name: Ultimate Error Diagnosis
-        if: failure()
-        run: |
-          if [ -f build.log ]; then
-            grep -i -B 50 -A 20 "error" build.log || tail -n 500 build.log
-          fi
-
-      # 7. التكملة اللي كنت مستنيها: تحويل الـ Tarball لصور (Flashable)
+      # 6. التكملة: تحويل الناتج لصور قابلة للتفليش (Crucial Step)
       - name: Create Final Flashable Images
         if: success()
         run: |
           sudo apt update && sudo apt install -y fakeroot git img2simg jq sudo wget xz-utils zstd
           git clone https://github.com/NotKit/halium-generic-adaptation-build-tools.git -b wseries build_tools
+          # تجهيز ملفات الـ OTA الوهمية
           ./build_tools/prepare-fake-ota.sh out/device_gta4l.tar.xz workdir/fake-ota
           mkdir -p out_final
+          # استخراج الـ system image
           fakeroot ./build_tools/system-image-from-ota.sh workdir/fake-ota/ubuntu_command out_final
           mv out_final/rootfs.img out_final/ubuntu.img
+          # ضغط النسخة بأعلى تقنية لتقليل المساحة
           zstd -15 -T0 out_final/ubuntu.img -o out_final/ubuntu.img.zst
           mv out_final/boot.img out_final/boot-T505N.img
 
-      # 8. الرفع النهائي للـ Artifacts
+      # 7. رفع الصور النهائية للـ Artifacts
       - name: Upload Final Images
         if: success()
         uses: actions/upload-artifact@v4
@@ -90,23 +89,24 @@ jobs:
             out_final/boot-T505N.img
             out_final/ubuntu.img.zst
 
-      # 9. الحركة الصايعة: عمل GitHub Release أوتوماتيك (لما ترفع Tag)
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          gh release create "${{ github.ref_name }}" \
-            out_final/boot-T505N.img \
-            out_final/ubuntu.img.zst \
-            --title "Ubuntu Touch Stable for T505N" \
-            --notes "Nuclear Build - 60GB Swap - T505N Optimized" \
-            --clobber
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # 10. رفع اللوج في حالة الفشل
+      # 8. رفع اللوج في حالة الفشل (عشان لو ضرب نعرف ليه)
       - name: Upload Build Log on Failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: build-failure-logs
           path: build.log
+
+      # 9. الحركة النهائية: عمل Release رسمي (اختياري بس هيفيدك)
+      - name: Create Release
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            out_final/boot-T505N.img
+            out_final/ubuntu.img.zst
+          name: Ubuntu Touch for T505N (Stable Build)
+          tag_name: ${{ github.ref_name }}
+          body: "Stable Ubuntu Touch Build for Samsung Galaxy Tab A7 (LTE)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
