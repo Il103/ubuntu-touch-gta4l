@@ -11,36 +11,47 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      # 1. بنوسع الهارد ونعمل سواب 12 جيجا قبل أي حاجة
-      - name: Maximize Build Space (The Beast Mode)
+      # 1. توسيع الملعب: 40 جيجا للسيستم و 16 جيجا سواب (إدارة رامات عالمية)
+      - name: Maximize Build Space (The Beast)
         uses: easimon/maximize-build-space@master
         with:
-          root-reserve-mb: 20480 
-          swap-size-mb: 12288     
+          root-reserve-mb: 40960   # سبنا 40 جيجا للنظام عشان ميتخنقش زي المرة اللي فاتت
+          swap-size-mb: 16384      # 16 جيجا سواب عشان الـ Linker ميزعلش
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
 
-      # 2. بننزل الكود في المساحة الجديدة
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Install build tools
+      # 2. تثبيت "ترسانة" الأدوات (ضفت لك مكتبات الـ ncurses والـ lz4 المهمة للكيرنل)
+      - name: Install Build Arsenal
         run: |
           sudo apt update
-          sudo apt install android-tools-mkbootimg bc bison build-essential ca-certificates cpio curl device-tree-compiler fakeroot flex git kmod libssl-dev libtinfo5 python2 sudo unzip wget xz-utils zstd -y --no-install-recommends
+          sudo apt install -y android-tools-mkbootimg bc bison build-essential ca-certificates cpio curl \
+          device-tree-compiler fakeroot flex git kmod libssl-dev libtinfo5 python2 sudo unzip wget \
+          xz-utils zstd libncurses5-dev libncursesw5-dev lz4 liblz4-tool --no-install-recommends
           sudo apt clean
           sudo ln -sf /usr/bin/python2 /usr/bin/python
 
       - name: Fix Permissions
         run: chmod +x build.sh
 
-      # 3. أمر البناء الصافي من غير فلسفة زيادة عشان السكريبت ميزعلش
+      # 3. البناء (شيلنا أي أوبشنز السكريبت مبيفهمهاش عشان ميعملش Error 127)
       - name: Build device tarball
         run: |
           ./build.sh -b workdir
+        continue-on-error: false
+
+      # 4. لو فشل (لا قدر الله)، دي الخطوة اللي هتجب لنا "القاتل الحقيقي" من اللوجز
+      - name: Diagnostic Logs on Failure
+        if: failure()
+        run: |
+          echo "Searching for the real Error..."
+          find workdir/downloads/KERNEL_OBJ -name "*.log" -exec tail -n 50 {} + || true
+          tail -n 100 workdir/build.log || true
 
       - name: Upload build output
         uses: actions/upload-artifact@v4
@@ -52,52 +63,40 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     steps:
-      - name: Maximize Space for Images
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 10240
-          swap-size-mb: 8192
-
       - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Download device tarball
+        uses: actions/checkout@v4
+      
+      - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
           name: device-tarball
           path: out
 
-      - name: Install tools
+      - name: Create Flashable Images
         run: |
-          sudo apt update
-          sudo apt install -y fakeroot git img2simg jq sudo wget xz-utils
-          sudo apt clean
-
-      - name: Clone halium tools
-        run: git clone https://github.com/NotKit/halium-generic-adaptation-build-tools.git -b wseries build
-
-      - name: Create flashable images
-        run: |
+          sudo apt update && sudo apt install -y fakeroot git img2simg jq sudo wget xz-utils zstd
+          git clone https://github.com/NotKit/halium-generic-adaptation-build-tools.git -b wseries build
           ./build/prepare-fake-ota.sh out/device_gta4l.tar.xz workdir/fake-ota
           mkdir -p out
           fakeroot ./build/system-image-from-ota.sh workdir/fake-ota/ubuntu_command out
           mv out/rootfs.img out/ubuntu.img
           zstd -T0 out/ubuntu.img
 
-      - name: Release and Upload
-        if: github.event_name == 'push'
+      # 5. التكملة اللي بتنزل لك الملفات في الـ Artifacts عشان تحملها
+      - name: Upload Final Images
+        uses: actions/upload-artifact@v4
+        with:
+          name: images-gta4l-noble
+          path: |
+            out/boot.img
+            out/ubuntu.img.zst
+
+      # 6. الرفع للـ Releases (لو عملت Tag)
+      - name: Release to GitHub
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
-            git fetch --tags
-            TAG_NAME=$(git tag --points-at HEAD | head -n1)
-            if [ -z "$TAG_NAME" ]; then
-                echo "No tag found. Just uploading artifact."
-                exit 0
-            fi
             mv out/ubuntu.img.zst ubuntu-gta4l.img.zst
             mv out/boot.img boot-gta4l.img
-            gh release create "$TAG_NAME" ubuntu-gta4l.img.zst boot-gta4l.img --clobber || \
-                gh release upload "$TAG_NAME" ubuntu-gta4l.img.zst boot-gta4l.img --clobber
+            gh release create "${{ github.ref_name }}" ubuntu-gta4l.img.zst boot-gta4l.img --clobber
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
