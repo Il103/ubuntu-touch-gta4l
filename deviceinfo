@@ -1,58 +1,42 @@
 # ---------------------------------------------------------
-# Device & OS Info (Samsung Tab A7 LTE - gta4l)
+# Device Info - Samsung Tab A7 (gta4l)
 # ---------------------------------------------------------
 deviceinfo_format_version="0"
 deviceinfo_name="Samsung Galaxy Tab A7 LTE"
 deviceinfo_manufacturer="Samsung"
 deviceinfo_codename="gta4l"
-deviceinfo_year="2020"
 deviceinfo_arch="arm64"
-
 deviceinfo_halium_version="12"
 deviceinfo_ubuntu_touch_release="20.04"
-deviceinfo_bootimg_header_version="2"
-deviceinfo_bootimg_os_version="12.0.0"
-deviceinfo_bootimg_os_patch_level="2026-03-01"
 
-# ---------------------------------------------------------
 # Kernel Source (LineageOS 20)
-# ---------------------------------------------------------
 deviceinfo_kernel_source="https://github.com/LineageOS/android_kernel_samsung_sm6115.git"
 deviceinfo_kernel_source_branch="lineage-20"
 deviceinfo_kernel_defconfig="vendor/bengal_defconfig"
 
-# ---------------------------------------------------------
-# Compiler & RAM Optimization
-# ---------------------------------------------------------
+# Compiler & RAM Optimization (The Fix for Error 2)
 deviceinfo_kernel_clang_compile="true"
 deviceinfo_kernel_use_lld="true"
 deviceinfo_kernel_llvm_binutils="true"
-
 export LLVM=1
 export LLVM_IAS=1
-export CROSS_COMPILE="aarch64-linux-android-"
+export KCFLAGS="-w -g0 -O2"
+export KCPPFLAGS="-w -g0 -O2"
+export KBUILD_LDFLAGS="--gc-sections --strip-all"
 
-export KCFLAGS="-w -g0"
-export KCPPFLAGS="-w -g0"
-export KBUILD_LDFLAGS="--gc-sections"
-
-# ---------------------------------------------------------
-# Flash Offsets (SM6115 / Bengal Standard)
-# ---------------------------------------------------------
+# Flash Offsets & Partition
 deviceinfo_flash_pagesize="4096"
 deviceinfo_flash_offset_base="0x00000000"
 deviceinfo_flash_offset_kernel="0x00008000"
 deviceinfo_flash_offset_ramdisk="0x01000000"
 deviceinfo_flash_offset_second="0x00f00000"
 deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_bootimg_header_version="2"
+deviceinfo_bootimg_partition_size="67108864"
 
-# ---------------------------------------------------------
-# Init Modules (لتحميل تعريفات كوالكوم الأساسية مبكراً)
-# ---------------------------------------------------------
-# لو تعريفات الواي فاي بتتبني كـ modules في الكيرنل ده، السطر ده هيحملها
-deviceinfo_modules_init="wlan,qca_cld3"
+# Display & UI Scaling
+deviceinfo_display_density="240"
+deviceinfo_gpu_arch="adreno"
 
-# ---------------------------------------------------------
-# Cmdline (The Ultimate Joker - Swap + Drivers + Halium Hooks)
-# ---------------------------------------------------------
-deviceinfo_kernel_cmdline="console=ttyMSM0,115200n8 androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.memcg=1 lpm_levels.sleep_disabled=1 msm_rtb.filter=0x237 service_locator.enable=1 androidboot.usbcontroller=4e00000.dwc3 androidboot.usbconfigfs=true swiotlb=2048 loop.max_part=16 cgroup_disable=memory panic=0 androidboot.selinux=permissive zswap.enabled=1 zswap.compressor=lz4 zswap.max_pool_percent=50 zram.num_devices=1 firmware_class.path=/vendor/firmware_mnt/image,/vendor/firmware"
+# Cmdline (Swap + Drivers Support)
+deviceinfo_kernel_cmdline="console=ttyMSM0,115200n8 androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.memcg=1 lpm_levels.sleep_disabled=1 msm_rtb.filter=0x237 service_locator.enable=1 androidboot.usbcontroller=4e00000.dwc3 swiotlb=2048 loop.max_part=16 cgroup_disable=memory panic=0 androidboot.selinux=permissive zswap.enabled=1 zswap.compressor=lz4 zswap.max_pool_percent=50 zram.num_devices=1 firmware_class.path=/vendor/firmware_mnt/image,/vendor/firmware"
