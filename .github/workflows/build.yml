@@ -11,7 +11,20 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # --- 🚀 المرحلة القاضية: توفير مساحة وسواب 18 جيجا ---
+      - name: Maximize Build Space (18GB Swap Mode)
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 512
+          swap-size-mb: 18432
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
 
       - name: Install build tools/dependencies
         run: |
@@ -21,21 +34,32 @@ jobs:
 
       - name: Build device tarball
         run: |
-          ./build.sh -b workdir
+          # محاولة البناء بكل القوة، ولو فشل بسبب الرام يكمل بنواة واحدة (Single Core) أضمن
+          ./build.sh -b workdir || ./build.sh -b workdir -j1
 
       - name: Upload build output
         uses: actions/upload-artifact@v4
         with:
           name: device-tarball
-          path: out/device_wseries.tar.xz
+          path: out/device_gta4l.tar.xz
 
   devel-flashable:
     needs: build
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      # --- لازم السواب هنا كمان عشان تجميع الـ Images بياكل رامات ---
+      - name: Create 18GB Swap
+        run: |
+          sudo fallocate -l 18G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
 
       - name: Download device tarball
         uses: actions/download-artifact@v4
@@ -53,12 +77,13 @@ jobs:
 
       - name: Prepare fake OTA update
         run: |
-          ./build/prepare-fake-ota.sh out/device_wseries.tar.xz workdir/fake-ota
+          ./build/prepare-fake-ota.sh out/device_gta4l.tar.xz workdir/fake-ota
 
       - name: Create flashable images
         run: |
           mkdir -p out
           fakeroot ./build/system-image-from-ota.sh workdir/fake-ota/ubuntu_command out
+          # تغيير الأسماء عشان تبقى واضحة للتابلت بتاعك
           mv out/rootfs.img out/ubuntu.img
           zstd -T0 out/ubuntu.img
 
@@ -67,11 +92,11 @@ jobs:
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: images-wseries-noble
+          name: images-gta4l-noble
           path: |
             out/boot.img
             out/ubuntu.img.zst
-            out/device_wseries.tar.xz
+            out/device_gta4l.tar.xz
 
       - name: Release flashable images
         if: github.event_name == 'push'
@@ -83,9 +108,9 @@ jobs:
                 exit 0
             fi
             echo "Found tag: $TAG_NAME"
-            mv out/ubuntu.img.zst ubuntu-wseries.img.zst
-            mv out/boot.img boot-wseries.img
-            gh release create "$TAG_NAME" ubuntu-wseries.img.zst boot-wseries.img || \
-                gh release upload "$TAG_NAME" ubuntu-wseries.img.zst boot-wseries.img --clobber
+            mv out/ubuntu.img.zst ubuntu-gta4l.img.zst
+            mv out/boot.img boot-gta4l.img
+            gh release create "$TAG_NAME" ubuntu-gta4l.img.zst boot-gta4l.img || \
+                gh release upload "$TAG_NAME" ubuntu-gta4l.img.zst boot-gta4l.img --clobber
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
